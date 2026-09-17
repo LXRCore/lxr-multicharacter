@@ -1,343 +1,261 @@
 --[[
-    ██╗     ██╗  ██╗██████╗        ██╗   ██╗██╗   ██╗██╗  ████████╗██╗ ██████╗██╗  ██╗ █████╗ ██████╗
-    ██║     ╚██╗██╔╝██╔══██╗       ███╗ ███║██║   ██║██║  ╚══██╔══╝██║██╔════╝██║  ██║██╔══██╗██╔══██╗
-    ██║      ╚███╔╝ ██████╔╝ █████╗██╔████╔██║██║ ██║██║     ██║   ██║██║     ███████║███████║██████╔╝
-    ██║      ██╔██╗ ██╔══██╗ ╚════╝██║╚██╔╝██║██║ ██║██║     ██║   ██║██║     ██╔══██║██╔══██║██╔══██╗
-    ███████╗██╔╝ ██╗██║  ██║       ██║ ╚═╝ ██║╚██████╔╝███████╗██║ ██║╚██████╗██║  ██║██║  ██║██║  ██║
-    ╚══════╝╚═╝  ╚═╝╚═╝  ╚═╝       ╚═╝     ╚═╝ ╚═════╝ ╚══════╝╚═╝ ╚═╝ ╚═════╝╚═╝  ╚═╝╚═╝  ╚═╝╚═╝  ╚═╝
+    ██╗     ██╗  ██╗██████╗        ███╗   ███╗██╗   ██╗██╗  ████████╗██╗ ██████╗██╗  ██╗ █████╗ ██████╗
+    ██║     ╚██╗██╔╝██╔══██╗       ████╗ ████║██║   ██║██║  ╚══██╔══╝██║██╔════╝██║  ██║██╔══██╗██╔══██╗
+    ██║      ╚███╔╝ ██████╔╝█████╗██╔████╔██║██║   ██║██║     ██║   ██║██║     ███████║███████║██████╔╝
+    ██║      ██╔██╗ ██╔══██╗╚════╝██║╚██╔╝██║██║   ██║██║     ██║   ██║██║     ██╔══██║██╔══██║██╔══██╗
+    ███████╗██╔╝ ██╗██║  ██║      ██║ ╚═╝ ██║╚██████╔╝███████╗██║   ██║╚██████╗██║  ██║██║  ██║██║  ██║
+    ╚══════╝╚═╝  ╚═╝╚═╝  ╚═╝      ╚═╝     ╚═╝ ╚═════╝ ╚══════╝╚═╝   ╚═╝ ╚═════╝╚═╝  ╚═╝╚═╝  ╚═╝╚═╝  ╚═╝
 
-    🐺 LXR Multicharacter System — Client
+    🐺 LXR Core - Multicharacter Client
 
-    ═══════════════════════════════════════════════════════════════════════════════
-    SERVER INFORMATION
-    ═══════════════════════════════════════════════════════════════════════════════
+    Owns the selection scene (camera, hidden interior, preview ped) and the NUI.
+    It never decides anything: every button press is relayed to the server,
+    which validates and answers. Once a character is loaded the resource is
+    idle (0.00 ms) until /logout re-opens the scene.
 
-    Server:      The Land of Wolves 🐺
-    Developer:   iBoss21 / The Lux Empire
-    Website:     https://www.wolves.land
-    Discord:     https://discord.gg/CrKcWdfd3A
-    Store:       https://theluxempire.tebex.io
-
-    © 2026 iBoss21 / The Lux Empire | wolves.land | All Rights Reserved
-    ═══════════════════════════════════════════════════════════════════════════════
+    Developer:   iBoss21 / LXRCore
+    Website:     https://www.lxrcore.com
+    © 2026 iBoss21 / LXRCore | lxrcore.com | All Rights Reserved
 ]]
 
-local charPed = nil
-local choosingCharacter = false
-local currentSkin = nil
-local currentClothes = nil
-local selectingChar = true
+local LXRCore = exports['lxr-core']:GetCoreObject()
 
-local isChossing = false
-
-local cams = {
-    {
-        type = "customization",
-        x = -561.8157,
-        y = -3780.966,
-        z = 239.0805,
-        rx = -4.2146,
-        ry = -0.0007,
-        rz = -87.8802,
-        fov = 30.0
-    },
-    {
-        type = "selection",
-        x = -562.8157,
-        y = -3776.266,
-        z = 239.0805,
-        rx = -4.2146,
-        ry = -0.0007,
-        rz = -87.8802,
-        fov = 30.0
-    }
+local state = {
+    open = false,
+    cam = nil,
+    introCam = nil,
+    ped = nil,
+    previewToken = 0,
 }
 
--- Handlers
+-- ═══════════════════════════════════════════════════════════════════════════════
+-- 🎥 SCENE
+-- ═══════════════════════════════════════════════════════════════════════════════
 
-AddEventHandler('onResourceStop', function(resource)
-    if (GetCurrentResourceName() == resource) then
-        DeleteEntity(charPed)
-        SetModelAsNoLongerNeeded(charPed)
+local function appearance()
+    local res = Config.Integrations.appearance and Config.Integrations.appearance.resource
+    if res and GetResourceState(res) == 'started' then return exports[res] end
+    return nil
+end
+
+local function deletePreview()
+    if state.ped and DoesEntityExist(state.ped) then
+        SetEntityAsMissionEntity(state.ped, true, true)
+        DeleteEntity(state.ped)
     end
-end)
+    state.ped = nil
+end
 
--- Functions
+local function destroyCams()
+    RenderScriptCams(false, false, 0, true, true)
+    if state.cam then DestroyCam(state.cam, true) end
+    if state.introCam then DestroyCam(state.introCam, true) end
+    state.cam, state.introCam = nil, nil
+    SetTimecycleModifier('default')
+end
 
-local function baseModel(sex)
-    if (sex == 'mp_male') then
-        Citizen.InvokeNative(0xD3A7B003ED343FD9, charPed, 0x158cb7f2, true, true, true); --head
-        Citizen.InvokeNative(0xD3A7B003ED343FD9, charPed, 361562633, true, true, true); --hair
-        Citizen.InvokeNative(0xD3A7B003ED343FD9, charPed, 62321923, true, true, true); --hand
-        Citizen.InvokeNative(0xD3A7B003ED343FD9, charPed, 3550965899, true, true, true); --legs
-        Citizen.InvokeNative(0xD3A7B003ED343FD9, charPed, 612262189, true, true, true); --Eye
-        Citizen.InvokeNative(0xD3A7B003ED343FD9, charPed, 319152566, true, true, true); --
-        Citizen.InvokeNative(0xD3A7B003ED343FD9, charPed, 0x2CD2CB71, true, true, true); -- shirt
-        Citizen.InvokeNative(0xD3A7B003ED343FD9, charPed, 0x151EAB71, true, true, true); -- bots
-        Citizen.InvokeNative(0xD3A7B003ED343FD9, charPed, 0x1A6D27DD, true, true, true); -- pants
-    else
-        Citizen.InvokeNative(0xD3A7B003ED343FD9, charPed, 0x1E6FDDFB, true, true, true); -- head
-        Citizen.InvokeNative(0xD3A7B003ED343FD9, charPed, 272798698, true, true, true); -- hair
-        Citizen.InvokeNative(0xD3A7B003ED343FD9, charPed, 869083847, true, true, true); -- Eye
-        Citizen.InvokeNative(0xD3A7B003ED343FD9, charPed, 736263364, true, true, true); -- hand
-        Citizen.InvokeNative(0xD3A7B003ED343FD9, charPed, 0x193FCEC4, true, true, true); -- shirt
-        Citizen.InvokeNative(0xD3A7B003ED343FD9, charPed, 0x285F3566, true, true, true); -- pants
-        Citizen.InvokeNative(0xD3A7B003ED343FD9, charPed, 0x134D7E03, true, true, true); -- bots
+local function setupCams()
+    local s = Config.Scene
+    state.introCam = CreateCam('DEFAULT_SCRIPTED_CAMERA', true)
+    SetCamCoord(state.introCam, s.cameraIntro.coords.x, s.cameraIntro.coords.y, s.cameraIntro.coords.z)
+    SetCamRot(state.introCam, s.cameraIntro.rot.x, s.cameraIntro.rot.y, s.cameraIntro.rot.z, 2)
+    SetCamFov(state.introCam, s.camera.fov)
+    SetCamActive(state.introCam, true)
+    RenderScriptCams(true, false, 0, true, true)
+
+    state.cam = CreateCam('DEFAULT_SCRIPTED_CAMERA', true)
+    SetCamCoord(state.cam, s.camera.coords.x, s.camera.coords.y, s.camera.coords.z)
+    SetCamRot(state.cam, s.camera.rot.x, s.camera.rot.y, s.camera.rot.z, 2)
+    SetCamFov(state.cam, s.camera.fov)
+    SetCamActiveWithInterp(state.cam, state.introCam, s.cameraIntro.durationMs, 1, 1)
+    if s.timecycle and s.timecycle ~= '' then
+        SetTimecycleModifier(s.timecycle)
+        SetTimecycleModifierStrength(0.6)
     end
 end
 
-local function createCharacter(sex)
-    if (sex == 0) then
-        local model = 'mp_male'
-        exports['lxr-clothing']:RequestAndSetModel(model)
-        Wait(1000)
-        Citizen.InvokeNative(0xD3A7B003ED343FD9, PlayerPedId(), 0x158cb7f2, true, true, true); --head
-        Citizen.InvokeNative(0xD3A7B003ED343FD9, PlayerPedId(), 0x16e292a1, true, true, true); --torso
-        Citizen.InvokeNative(0xD3A7B003ED343FD9, PlayerPedId(), 0xa615e02, true, true, true); --legs
-        Citizen.InvokeNative(0xD3A7B003ED343FD9, PlayerPedId(), 0x105ddb4, true, true, true); --hair
-        Citizen.InvokeNative(0xD3A7B003ED343FD9, PlayerPedId(), 0x10404a83, true, true, true); --mustache
-        SetModelAsNoLongerNeeded(model)
-    else
-        local model = 'mp_female'
-        exports['lxr-clothing']:RequestAndSetModel(model)
-        Wait(1000)
-        Citizen.InvokeNative(0xD3A7B003ED343FD9, PlayerPedId(), 0x11567c3, true, true, true); --head
-        Citizen.InvokeNative(0xD3A7B003ED343FD9, PlayerPedId(), 0x2c4fe0c5, true, true, true); --torso
-        Citizen.InvokeNative(0xD3A7B003ED343FD9, PlayerPedId(), 0xaa25eca7, true, true, true); --legs
-        Citizen.InvokeNative(0xD3A7B003ED343FD9, PlayerPedId(), 0x104293ea, true, true, true); --hair
-        SetModelAsNoLongerNeeded(model)
-    end
-    selectingChar = false
+local function loadModel(model)
+    local hash = type(model) == 'string' and joaat(model) or model
+    if not IsModelValid(hash) then return nil end
+    RequestModel(hash)
+    local tries = 0
+    while not HasModelLoaded(hash) and tries < 300 do Wait(10) tries = tries + 1 end
+    return HasModelLoaded(hash) and hash or nil
 end
 
-local function skyCam(bool)
-    if bool then
-        DoScreenFadeIn(1000)
-        SetTimecycleModifier('hud_def_blur')
-        SetTimecycleModifierStrength(1.0)
-        cam = CreateCam("DEFAULT_SCRIPTED_CAMERA")
-        SetCamCoord(cam, -555.925, -3778.709, 238.597)
-        SetCamRot(cam, -20.0, 0.0, 83)
-        SetCamActive(cam, true)
-        RenderScriptCams(true, false, 1, true, true)
-        fixedCam = CreateCam("DEFAULT_SCRIPTED_CAMERA")
-        SetCamCoord(fixedCam, -561.206, -3776.224, 239.597)
-        SetCamRot(fixedCam, -20.0, 0, 270.0)
-        SetCamActive(fixedCam, true)
-        SetCamActiveWithInterp(fixedCam, cam, 3900, true, true)
-        Wait(3900)
-        DestroyCam(groundCam)
-        InterP = true
-    else
-        SetTimecycleModifier('default')
-        SetCamActive(cam, false)
-        DestroyCam(cam, true)
-        RenderScriptCams(false, false, 1, true, true)
-        FreezeEntityPosition(PlayerPedId(), false)
+---Spawn the preview ped for a character (or a default model). Token guards
+---against a slower callback overwriting a newer selection.
+local function preview(citizenid, gender)
+    state.previewToken = state.previewToken + 1
+    local token = state.previewToken
+    deletePreview()
+
+    local data
+    if citizenid then
+        data = LXRCore.Callback.Await('lxr-multicharacter:server:appearance', citizenid)
+    end
+    if token ~= state.previewToken or not state.open then return end
+
+    local s = Config.Scene
+    local model = (data and data.model) or s.previewModels[tonumber(gender) or 0] or 'mp_male'
+    local hash = loadModel(model)
+    if not hash then return end
+    local ped = CreatePed(hash, s.pedCoords.x, s.pedCoords.y, s.pedCoords.z, s.pedCoords.w, false, false, false, false)
+    SetModelAsNoLongerNeeded(hash)
+    if token ~= state.previewToken then DeleteEntity(ped) return end
+    state.ped = ped
+    Citizen.InvokeNative(0x283978A15512B2FE, ped, true) -- SetRandomOutfitVariation
+    FreezeEntityPosition(ped, true)
+    SetEntityInvincible(ped, true)
+    SetBlockingOfNonTemporaryEvents(ped, true)
+    local tries = 0
+    while not Citizen.InvokeNative(0xA0BC8FAED8CFEB3C, ped) and tries < 100 do Wait(10) tries = tries + 1 end -- IsPedReadyToRender
+    local app = appearance()
+    if app and data then
+        pcall(function()
+            if data.skin then app:loadSkin(ped, data.skin, false) end
+            if data.clothes then app:loadClothes(ped, data.clothes, false) end
+        end)
     end
 end
 
-local function openCharMenu(bool)
-    exports['lxr-core']:TriggerCallback("lxr-multicharacter:server:GetNumberOfCharacters", function(result)
-        SetNuiFocus(bool, bool)
-        SendNUIMessage({
-            action = "ui",
-            toggle = bool,
-            nChar = result,
-        })
-        choosingCharacter = bool
-        Wait(100)
-        skyCam(bool)
+local function sceneLoop()
+    CreateThread(function()
+        local s = Config.Scene
+        while state.open do
+            Wait(0)
+            Citizen.InvokeNative(0xF1622CE88A1946FB) -- hide HUD this frame
+            if s.lightRange and s.lightRange > 0 and state.ped and DoesEntityExist(state.ped) then
+                local c = GetEntityCoords(state.ped)
+                DrawLightWithRange(c.x, c.y, c.z + 1.0, 255, 235, 200, s.lightRange, 40.0)
+            end
+        end
     end)
 end
 
--- Events
+-- ═══════════════════════════════════════════════════════════════════════════════
+-- 🪟 OPEN / CLOSE
+-- ═══════════════════════════════════════════════════════════════════════════════
 
-RegisterNetEvent('lxr-multicharacter:client:closeNUI', function()
-    DeleteEntity(charPed)
-    SetNuiFocus(false, false)
-    isChossing = false
-end)
+local function sendCharacters()
+    local payload = LXRCore.Callback.Await('lxr-multicharacter:server:characters')
+    if not payload then
+        SendNUIMessage({ action = 'error', message = 'Could not load characters' })
+        return
+    end
+    SendNUIMessage({ action = 'characters', characters = payload.characters, max = payload.max, locale = payload.locale, server = payload.server })
+    local first = payload.characters[1]
+    if first then preview(first.citizenid, first.gender) else preview(nil, 0) end
+end
 
-RegisterNetEvent('lxr-multicharacter:client:chooseChar', function()
-    SetEntityVisible(PlayerPedId(), false, false)
-    SetNuiFocus(false, false)
-    DoScreenFadeOut(10)
-    Wait(1000)
-    GetInteriorAtCoords(-558.9098, -3775.616, 238.59, 137.98)
-    FreezeEntityPosition(PlayerPedId(), true)
-    SetEntityCoords(PlayerPedId(), -562.91,-3776.25,237.63)
-    Wait(1500)
+local function openScene()
+    if state.open then return end
+    state.open = true
+    local s = Config.Scene
+    local ped = PlayerPedId()
+    DoScreenFadeOut(200)
+    Wait(250)
+    for _, imap in ipairs(s.imaps or {}) do RequestImap(imap) end
+    SetEntityVisible(ped, false, false)
+    FreezeEntityPosition(ped, true)
+    SetEntityCoords(ped, s.playerCoords.x, s.playerCoords.y, s.playerCoords.z, false, false, false, false)
+    SetEntityHeading(ped, s.playerCoords.w)
+    Wait(600)
     ShutdownLoadingScreen()
     ShutdownLoadingScreenNui()
-    Wait(10)
-    openCharMenu(true)
-    while selectingChar do
-        Wait(1)
-        local coords = GetEntityCoords(PlayerPedId())
-        DrawLightWithRange(coords.x, coords.y , coords.z + 1.0 , 255, 255, 255, 5.5, 50.0)
-    end
+    setupCams()
+    sceneLoop()
+    SetNuiFocus(true, true)
+    SendNUIMessage({ action = 'open' })
+    DoScreenFadeIn(s.fadeMs or 800)
+    sendCharacters()
+end
+
+local function closeScene()
+    if not state.open then return end
+    state.open = false
+    SetNuiFocus(false, false)
+    SendNUIMessage({ action = 'close' })
+    deletePreview()
+    destroyCams()
+    local ped = PlayerPedId()
+    FreezeEntityPosition(ped, false)
+    SetEntityVisible(ped, true, false)
+end
+
+-- ═══════════════════════════════════════════════════════════════════════════════
+-- 📡 EVENTS
+-- ═══════════════════════════════════════════════════════════════════════════════
+
+RegisterNetEvent('lxr-multicharacter:client:open', function() CreateThread(openScene) end)
+RegisterNetEvent('lxr-multicharacter:client:chooseChar', function() CreateThread(openScene) end) -- legacy name
+RegisterNetEvent('lxr-multicharacter:client:closeUI', function() closeScene() end)
+RegisterNetEvent('lxr-multicharacter:client:closeNUI', function() closeScene() end)             -- legacy name
+RegisterNetEvent('lxr-multicharacter:client:refresh', function() if state.open then CreateThread(sendCharacters) end end)
+
+-- ═══════════════════════════════════════════════════════════════════════════════
+-- 🖱 NUI CALLBACKS — relay only
+-- ═══════════════════════════════════════════════════════════════════════════════
+
+RegisterNUICallback('preview', function(data, cb)
+    cb({})
+    if not state.open then return end
+    CreateThread(function() preview(data and data.citizenid or nil, data and data.gender or 0) end)
 end)
 
--- NUI
-
-RegisterNUICallback('closeUI', function()
-    openCharMenu(false)
+RegisterNUICallback('select', function(data, cb)
+    cb({})
+    if not state.open or type(data) ~= 'table' or type(data.citizenid) ~= 'string' then return end
+    DoScreenFadeOut(300)
+    TriggerServerEvent('lxr-multicharacter:server:select', data.citizenid)
 end)
 
-RegisterNUICallback('disconnectButton', function()
-    SetEntityAsMissionEntity(charPed, true, true)
-    DeleteEntity(charPed)
+RegisterNUICallback('create', function(data, cb)
+    cb({})
+    if not state.open or type(data) ~= 'table' then return end
+    TriggerServerEvent('lxr-multicharacter:server:create', {
+        firstname = data.firstname, lastname = data.lastname, birthdate = data.birthdate,
+        gender = tonumber(data.gender) or 0, nationality = data.nationality,
+    })
+end)
+
+RegisterNUICallback('delete', function(data, cb)
+    cb({})
+    if not state.open or type(data) ~= 'table' or type(data.citizenid) ~= 'string' then return end
+    TriggerServerEvent('lxr-multicharacter:server:delete', data.citizenid)
+end)
+
+RegisterNUICallback('disconnect', function(_, cb)
+    cb({})
     TriggerServerEvent('lxr-multicharacter:server:disconnect')
 end)
 
-RegisterNUICallback('cDataPed', function(data) -- Visually seeing the char
-    local cData = data.cData
-    SetEntityAsMissionEntity(charPed, true, true)
-    DeleteEntity(charPed)
-
-    if cData ~= nil then
-        exports['lxr-core']:TriggerCallback('lxr-multicharacter:server:getSkin', function(data)
-            model = data?.model and tonumber(data.model) or nil
-            currentSkin = data?.skin and data.skin or nil
-            currentClothes = data?.clothes and data.clothes or nil             
-            if model ~= nil then
-                CreateThread(function()
-                    RequestModel(model)
-                    while not HasModelLoaded(model) do
-                        Wait(0)
-                    end
-                    charPed = CreatePed(model, -558.91, -3776.25, 237.63, 90.0, false, false)
-                    FreezeEntityPosition(charPed, false)
-                    SetEntityInvincible(charPed, true)
-                    SetBlockingOfNonTemporaryEvents(charPed, true)
-                    while not Citizen.InvokeNative(0xA0BC8FAED8CFEB3C, charPed) do
-                        Wait(1)
-                    end
-                    exports['lxr-clothing']:loadSkin(charPed, currentSkin, false)
-                    exports['lxr-clothing']:loadClothes(charPed, currentClothes, false)
-                end)
-            else
-                CreateThread(function()
-                    local randommodels = {
-                        "mp_male",
-                        "mp_female",
-                    }
-                    local randomModel = randommodels[math.random(1, #randommodels)]
-                    local model = GetHashKey(randomModel)
-                    RequestModel(model)
-                    while not HasModelLoaded(model) do
-                        Wait(0)
-                    end
-                    Wait(100)
-                    baseModel(randomModel)
-                    charPed = CreatePed(model, -558.91, -3776.25, 237.63, 90.0, false, false)
-                    FreezeEntityPosition(charPed, false)
-                    SetEntityInvincible(charPed, true)
-                    SetBlockingOfNonTemporaryEvents(charPed, true)
-                end)
-            end
-        end, cData.citizenid)
-    else
-        CreateThread(function()
-            local randommodels = {
-                "mp_male",
-                "mp_female",
-            }
-            local randomModel = randommodels[math.random(1, #randommodels)]
-            local model = GetHashKey(randomModel)
-            RequestModel(model)
-            while not HasModelLoaded(model) do
-                Wait(0)
-            end
-            charPed = CreatePed(model, -558.91, -3776.25, 237.63, 90.0, false, false)
-            Wait(100)
-            baseModel(randomModel)
-            FreezeEntityPosition(charPed, false)
-            SetEntityInvincible(charPed, true)
-            NetworkSetEntityInvisibleToNetwork(charPed, true)
-            SetBlockingOfNonTemporaryEvents(charPed, true)
-        end)
-    end
+RegisterNUICallback('refresh', function(_, cb)
+    cb({})
+    if state.open then CreateThread(sendCharacters) end
 end)
 
-
-RegisterNUICallback('selectCharacter', function(data) -- When a char is selected and confirmed to use
-    CreateThread(function()
-        selectingChar = false
-        local cData = data.cData
-        DoScreenFadeOut(10)
-        TriggerServerEvent('lxr-multicharacter:server:loadUserData', cData)
-        openCharMenu(false)
-        local model = IsPedMale(charPed) and 'mp_male' or 'mp_female'
-        SetEntityAsMissionEntity(charPed, true, true)
-        DeleteEntity(charPed)
-        Wait(5000)
-        exports['lxr-clothing']:RequestAndSetModel(model)
-        Wait(200)
-        exports['lxr-clothing']:loadSkin(PlayerPedId(), currentSkin, true)
-        Wait(500)
-        exports['lxr-clothing']:loadClothes(PlayerPedId(), currentClothes, false)
-        SetModelAsNoLongerNeeded(model)
-        
+-- After a character loads the spawn resource fades the screen back in; if no
+-- spawn resource is installed, do it here so the player is never stuck black.
+AddEventHandler('LXRCore:Client:OnPlayerLoaded', function()
+    closeScene()
+    SetTimeout(1500, function()
+        if IsScreenFadedOut() then DoScreenFadeIn(500) end
     end)
 end)
 
-RegisterNUICallback('setupCharacters', function() -- Present char info
-    exports['lxr-core']:TriggerCallback("lxr-multicharacter:server:setupCharacters", function(result)
-        SendNUIMessage({
-            action = "setupCharacters",
-            characters = result
-        })
-    end)
+AddEventHandler('onResourceStop', function(res)
+    if res ~= GetCurrentResourceName() then return end
+    closeScene()
 end)
 
-RegisterNUICallback('removeBlur', function()
-    SetTimecycleModifier('default')
-end)
-
-RegisterNUICallback('createNewCharacter', function(data) -- Creating a char
-    DoScreenFadeOut(150)
-    Wait(200)
-    DestroyAllCams(true)
-
-    if data.gender == "Male" then
-        data.gender = 0
-    elseif data.gender == "Female" then
-        data.gender = 1
-    end
-    createCharacter(data.gender)
-    DeleteEntity(charPed)
-    SetModelAsNoLongerNeeded(charPed)
-    TriggerServerEvent('lxr-multicharacter:server:createCharacter', data)
-    TriggerEvent('lxr-spawn:setFirstTime') -- simple true/false toggle :P
-    Wait(1000)
-    DoScreenFadeIn(1000)
-end)
-
-RegisterNUICallback('removeCharacter', function(data) -- Removing a char
-    TriggerServerEvent('lxr-multicharacter:server:deleteCharacter', data.citizenid)
-    TriggerEvent('lxr-multicharacter:client:chooseChar')
-end)
-
--- Threads
+-- ═══════════════════════════════════════════════════════════════════════════════
+-- 🚀 BOOT — wait for the session once, then open; no loop afterwards
+-- ═══════════════════════════════════════════════════════════════════════════════
 
 CreateThread(function()
-    RequestImap(-1699673416)
-    RequestImap(1679934574)
-    RequestImap(183712523)
-    while true do
-        Wait(0)
-        if NetworkIsSessionStarted() then
-            TriggerEvent('lxr-multicharacter:client:chooseChar')
-            isChossing = true
-            Citizen.CreateThread(function()
-                while isChossing do
-                    Wait(0)
-                    Citizen.InvokeNative(0xF1622CE88A1946FB)
-                end
-            end)
-            return
-        end
-    end
+    while not NetworkIsSessionStarted() do Wait(250) end
+    if LocalPlayer.state.isLoggedIn then return end -- resource restarted mid-session
+    Wait(500)
+    openScene()
 end)

@@ -1,29 +1,64 @@
-## Multicharacter for LXRCore 🧑‍🤝‍🧑
+<!--
+    🐺 lxr-multicharacter — LXRCore character selection & creation
+    Developer: iBoss21 / LXRCore · https://www.lxrcore.com
+    © 2026 iBoss21 / LXRCore | lxrcore.com | All Rights Reserved
+-->
 
-## Screenshots
-![Multicharacter](https://cdn.discordapp.com/attachments/1021700112776437760/1183144607526174720/Screenshot_2023-12-08_122759.png?ex=65874448&is=6574cf48&hm=82288895d8445a0f96d1ce1c98c083a498ecac3863faf93422eb69234fd67c72&)
-![Multicharacter2](https://cdn.discordapp.com/attachments/1021700112776437760/1183144580707795146/Screenshot_2023-12-08_122713.png?ex=65874441&is=6574cf41&hm=87f61bf4fe31091f73e6416589541550292836dfad29cdd3db7ab1dfb580c5fe&)
-![Multicharacter3](https://cdn.discordapp.com/attachments/1021700112776437760/1183144636773044264/Screenshot_2023-12-08_153956.png?ex=6587444f&is=6574cf4f&hm=97625d57afdc1adde44c0a2b2a096318cd9c7b7c8bcf6c8bed6de5bc70913cc1&)
+# 🐺 lxr-multicharacter — Character selection for LXRCore v3
 
-## Features
-- Create up to 5 characters.
-- Delete any character.
-- View character information during selection.
+![Version](https://img.shields.io/badge/version-2.0.0-c4a574)
+![Core](https://img.shields.io/badge/requires-lxr--core_v3-1a1512)
+![NUI](https://img.shields.io/badge/NUI-vanilla_%C2%B7_no_CDN-brightgreen)
+![Platform](https://img.shields.io/badge/platform-RedM-100e0c)
 
-## Installation
+The first screen a player sees: list characters, preview their appearance,
+create a new one, delete, or leave. Version 2 is a rewrite on the LXRCore v3
+API — the previous NUI posted to a wrong resource name and loaded jQuery /
+Materialize from CDNs, so it could not work.
 
-1. **Download the script** and place it in the `[lxr]` directory of your server.
-2. **Add the following code** to your `server.cfg`:
+## What it does
 
-```bash
+| | |
+|---|---|
+| **Server-authoritative** | slot limit, name / birth-date / gender / nationality rules, blocked words, create cooldown and ownership are all checked on the server; the client only relays |
+| **Slots** | default from `Config.Characters.default` (or lxr-core `Config.Player.maxCharacters`), per-license overrides, ACE bonus slots |
+| **Preview** | character ped with stored appearance (`lxr-clothing` exports when present), default model otherwise |
+| **Hand-off** | after load: `lxr-spawn:client:setupSpawnUI(cData, isNew)`; new characters also get `lxr-clothing:client:newPlayer` and starter items from `LXRShared.StarterItems` |
+| **Performance** | one `Wait(250)` poll until the session starts, a per-frame loop only while the scene is open, nothing afterwards |
+| **Localised** | English + Georgian; the NUI receives the same bundle |
+| **NUI** | vanilla HTML/CSS/JS, LXRCore design tokens, Georgian-safe font stack, ESC closes modals, logo shipped in `html/img/` |
+
+## Install
+
+```cfg
 ensure lxr-core
+ensure lxr-inventory
 ensure lxr-multicharacter
 ensure lxr-spawn
-ensure lxr-clothing
-ensure lxr-weathersync
 ```
+No SQL: characters live in lxr-core's `players` table. Appearance preview reads
+`playerskins` when `lxr-clothing` is running.
 
-## License
-```
-This project is licensed under the MIT License.
-```
+## Events & API
+
+| Name | Side | Purpose |
+|---|---|---|
+| `lxr-multicharacter:client:open` | client | open the selection scene (`chooseChar` kept as alias) |
+| `lxr-multicharacter:client:closeUI` | client | close it (`closeNUI` alias) |
+| `lxr-multicharacter:client:refresh` | client | reload the list |
+| `lxr-multicharacter:server:select(citizenid)` | net | load a character |
+| `lxr-multicharacter:server:create(data)` | net | create (validated) |
+| `lxr-multicharacter:server:delete(citizenid)` | net | delete (ownership enforced) |
+| `lxr-multicharacter:server:disconnect` | net | leave |
+| `exports['lxr-multicharacter']:GetMaxCharacters(src)` | server | slot count for a player |
+| `/logout` (admin), `/closemulti` | commands | |
+
+## Verification
+
+| Check | Result |
+|---|---|
+| Lua syntax (`luac -p`), JS syntax (`node --check`) | ✅ |
+| NUI rendered in a browser with mock data: list, detail, Georgian names, create modal, validation, ESC | ✅ |
+| In-game flow (scene camera, preview ped, login hand-off) | **NOT TESTED** yet |
+
+> © 2026 iBoss21 / LXRCore | [lxrcore.com](https://www.lxrcore.com) | All Rights Reserved

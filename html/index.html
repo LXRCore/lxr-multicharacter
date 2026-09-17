@@ -1,68 +1,97 @@
-<!DOCTYPE html>
+<!doctype html>
+<!--
+    🐺 LXR-MULTICHARACTER — Character selection NUI
+    Vanilla HTML/CSS/JS · LXRCore design tokens · Georgian-safe font stack · no CDN
+    © 2026 iBoss21 / LXRCore | lxrcore.com | All Rights Reserved
+-->
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta http-equiv="X-UA-Compatible" content="ie=edge">
-    <link href="reset.css" rel="stylesheet">
-    <link href="style.css" rel="stylesheet">
-    <script src="nui://game/ui/jquery.js" type="text/javascript"></script>
-    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
-    <script src="https://code.jquery.com/jquery-3.6.0.min.js" integrity="sha256-/xUj+3OJU5yExlq6GSYGSHk7tPXikynS7ogEvDej/m4=" crossorigin="anonymous"></script>
-    <title>lxr-Multicharacter</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>LXR Multicharacter</title>
+    <link rel="stylesheet" href="style.css">
 </head>
-    <body>
-        <div class="container">
-            <div class="main-screen">
-                <div class="welcomescreen">
-                    <div class="loading-rondje">
-                        <div class="lds-ring"><div></div><div></div><div></div><div></div></div>
-                        <p id="loading-text">Loading Characters</p>
-                    </div>
-                </div>
-                <div class="characters-list">
+<body>
+<div id="app" class="hidden">
+    <aside class="lxr-panel lxr-panel--list">
+        <header class="lxr-banner">
+            <div class="lxr-banner__avatar-wrap">
+                <img id="brand-logo" class="lxr-banner__avatar" src="img/lxrcore-logo.png" alt="LXRCore">
+            </div>
+            <div class="lxr-banner__text">
+                <div id="server-name" class="lxr-banner__title">LXRCore</div>
+                <div id="server-tagline" class="lxr-banner__sub"></div>
+            </div>
+        </header>
 
-                </div>
+        <div class="lxr-panel__head">
+            <h1 id="t-title" class="lxr-title">Choose your character</h1>
+            <p id="t-subtitle" class="lxr-muted"></p>
+            <p id="slots" class="lxr-slots"></p>
+        </div>
 
-                <div class="character-info">
-                    <div class="char-info-titel"><span id="char-info-titel">Character Information</span></div>
-                    <div class="character-info-valid">
-                        <span id="no-char">Select a character slot to see all information about your character.</span>
-                    </div>
-                </div>
+        <div id="loading" class="lxr-loading">
+            <span class="lxr-spinner"></span>
+            <span id="t-loading">Fetching your characters…</span>
+        </div>
 
-                <div class="character-register">
-                    <div class="characters-register-block-header">
-                        <p>Character Registration</p>
-                        <i class="material-icons-one" id="close-reg">close</i>
-                    </div>
-                    <div class="char-register-inputs">
-                        <input type="text" id="first_name" placeholder="First Name" class="char-reg-input">
-                        <input type="text" id="last_name" placeholder="Last Name" class="char-reg-input">
-                        <input type="text" id="nationality" placeholder="Nationality" class="char-reg-input">
-                        <input type="date" id="birthdate" placeholder="Birth Date" min="1900-01-01" max="2999-12-31" class="char-reg-input">
-                        <select id="gender" name="gender">
-                            <option value="Male" selected>Man</option>
-                            <option value="Female">Woman</option>
-                        </select>
-                    </div>
-                    <div class="character-reg-btn" id="create"><p id="create-text">Confirm</p></div>
-                </div>
+        <ul id="character-list" class="lxr-list lxr-scroll-minimal"></ul>
 
-                <div class="character-delete">
-                    <div class="characters-delete-block-header">
-                        <p>Delete Character</p>
-                    </div>
+        <footer class="lxr-panel__foot">
+            <button id="btn-disconnect" class="cfg-btn cfg-btn--ghost">Leave server</button>
+        </footer>
+    </aside>
 
-                    <p>Are You Sure You Want To Delete Your Character?</p>
+    <section class="lxr-panel lxr-panel--detail" id="detail" hidden>
+        <h2 id="detail-name" class="lxr-title lxr-title--lg"></h2>
+        <dl class="lxr-facts">
+            <div><dt id="t-job">Occupation</dt><dd id="d-job"></dd></div>
+            <div><dt id="t-born">Born</dt><dd id="d-born"></dd></div>
+            <div><dt id="t-nationality">Nationality</dt><dd id="d-nationality"></dd></div>
+            <div><dt id="t-cash">Cash</dt><dd id="d-cash"></dd></div>
+            <div><dt id="t-bank">Bank</dt><dd id="d-bank"></dd></div>
+            <div><dt id="t-last">Last seen</dt><dd id="d-last"></dd></div>
+        </dl>
+        <div class="lxr-actions">
+            <button id="btn-play" class="cfg-btn cfg-btn--primary">Ride out</button>
+            <button id="btn-delete" class="cfg-btn cfg-btn--danger">Delete</button>
+        </div>
+    </section>
 
-                    <div class="character-acceptdel-btn" id="accept-delete"><p id="accept-text">Confirm</p></div>
-                    <div class="character-canceldel-btn" id="cancel-delete"><p id="cancel-text">Return</p></div>
-                </div>
+    <!-- create modal -->
+    <div id="modal-create" class="modal hidden">
+        <form id="form-create" class="cfg-modal" autocomplete="off">
+            <h2 id="t-create-title" class="lxr-title">Create a character</h2>
+            <div class="cfg-grid">
+                <label><span id="t-firstname">First name</span><input class="cfg-input" name="firstname" maxlength="20" required></label>
+                <label><span id="t-lastname">Last name</span><input class="cfg-input" name="lastname" maxlength="20" required></label>
+                <label><span id="t-birthdate">Birth date</span><input class="cfg-input" name="birthdate" placeholder="1875-06-12" pattern="\d{4}-\d{2}-\d{2}" required></label>
+                <label><span id="t-nationality-l">Nationality</span><input class="cfg-input" name="nationality" maxlength="30" id="nationality-input"></label>
+            </div>
+            <fieldset class="cfg-gender">
+                <legend id="t-gender">Gender</legend>
+                <label><input type="radio" name="gender" value="0" checked><span id="t-male">Male</span></label>
+                <label><input type="radio" name="gender" value="1"><span id="t-female">Female</span></label>
+            </fieldset>
+            <p id="create-error" class="lxr-error" hidden></p>
+            <div class="cfg-modal__footer">
+                <button type="button" id="btn-create-cancel" class="cfg-btn cfg-btn--ghost">Cancel</button>
+                <button type="submit" id="btn-create-confirm" class="cfg-btn cfg-btn--primary">Create</button>
+            </div>
+        </form>
+    </div>
+
+    <!-- delete modal -->
+    <div id="modal-delete" class="modal hidden">
+        <div class="cfg-modal">
+            <p id="delete-text" class="lxr-lead"></p>
+            <div class="cfg-modal__footer">
+                <button type="button" id="btn-delete-cancel" class="cfg-btn cfg-btn--ghost">Cancel</button>
+                <button type="button" id="btn-delete-confirm" class="cfg-btn cfg-btn--danger">Yes, delete</button>
             </div>
         </div>
-    </body>
-    <script type="text/javascript" src="profanity.js"></script>
-    <script type="text/javascript" src="script.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/js/materialize.min.js"></script>
+    </div>
+</div>
+<script src="app.js"></script>
+</body>
 </html>

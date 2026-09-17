@@ -1,160 +1,131 @@
 --[[
-    ██╗     ██╗  ██╗██████╗        ██╗   ██╗██╗   ██╗██╗  ████████╗██╗ ██████╗██╗  ██╗ █████╗ ██████╗
-    ██║     ╚██╗██╔╝██╔══██╗       ███╗ ███║██║   ██║██║  ╚══██╔══╝██║██╔════╝██║  ██║██╔══██╗██╔══██╗
-    ██║      ╚███╔╝ ██████╔╝ █████╗██╔████╔██║██║ ██║██║     ██║   ██║██║     ███████║███████║██████╔╝
-    ██║      ██╔██╗ ██╔══██╗ ╚════╝██║╚██╔╝██║██║ ██║██║     ██║   ██║██║     ██╔══██║██╔══██║██╔══██╗
-    ███████╗██╔╝ ██╗██║  ██║       ██║ ╚═╝ ██║╚██████╔╝███████╗██║ ██║╚██████╗██║  ██║██║  ██║██║  ██║
-    ╚══════╝╚═╝  ╚═╝╚═╝  ╚═╝       ╚═╝     ╚═╝ ╚═════╝ ╚══════╝╚═╝ ╚═╝ ╚═════╝╚═╝  ╚═╝╚═╝  ╚═╝╚═╝  ╚═╝
+    ██╗     ██╗  ██╗██████╗        ███╗   ███╗██╗   ██╗██╗  ████████╗██╗ ██████╗██╗  ██╗ █████╗ ██████╗
+    ██║     ╚██╗██╔╝██╔══██╗       ████╗ ████║██║   ██║██║  ╚══██╔══╝██║██╔════╝██║  ██║██╔══██╗██╔══██╗
+    ██║      ╚███╔╝ ██████╔╝█████╗██╔████╔██║██║   ██║██║     ██║   ██║██║     ███████║███████║██████╔╝
+    ██║      ██╔██╗ ██╔══██╗╚════╝██║╚██╔╝██║██║   ██║██║     ██║   ██║██║     ██╔══██║██╔══██║██╔══██╗
+    ███████╗██╔╝ ██╗██║  ██║      ██║ ╚═╝ ██║╚██████╔╝███████╗██║   ██║╚██████╗██║  ██║██║  ██║██║  ██║
+    ╚══════╝╚═╝  ╚═╝╚═╝  ╚═╝      ╚═╝     ╚═╝ ╚═════╝ ╚══════╝╚═╝   ╚═╝ ╚═════╝╚═╝  ╚═╝╚═╝  ╚═╝╚═╝  ╚═╝
 
-    🐺 LXR Multicharacter System — Configuration
+    🐺 LXR Core - Multicharacter Configuration
 
-    This configuration file controls the multicharacter selection system for RedM.
-    Players can create, select, and delete characters through an NUI interface.
+    Character slots, creation rules, the selection scene (camera, preview ped)
+    and the hand-off events to the spawn / appearance resources. Every value a
+    server owner may want to change lives here.
 
     ═══════════════════════════════════════════════════════════════════════════════
     SERVER INFORMATION
     ═══════════════════════════════════════════════════════════════════════════════
 
-    Server:      The Land of Wolves 🐺
-    Developer:   iBoss21 / The Lux Empire
-    Website:     https://www.wolves.land
-    Discord:     https://discord.gg/CrKcWdfd3A
-    GitHub:      https://github.com/iBoss21
-    Store:       https://theluxempire.tebex.io
+    Brand:       LXRCore — Lux Empire eXperience RedM Core
+    Product:     wolves.land / The Land of Wolves 🐺
+    Developer:   iBoss21 / LXRCore
+    Website:     https://www.lxrcore.com
+    Discord:     https://discord.gg/ZHMKVYyhBa (development)
+    GitHub:      https://github.com/LXRCore
 
     ═══════════════════════════════════════════════════════════════════════════════
 
-    Version: 1.0.1
-    Performance Target: Optimized for minimal server overhead and client FPS impact
+    Version: 2.0.0
+    Framework Support: LXR Core v3 (Native)
 
-    Framework Support:
-    - LXR Core (Primary)
-    - RSG Core (Compatible)
-    - VORP Core (Compatible)
-
-    ═══════════════════════════════════════════════════════════════════════════════
-    CREDITS
-    ═══════════════════════════════════════════════════════════════════════════════
-
-    Script Author: iBoss21 / The Lux Empire for The Land of Wolves
-
-    © 2026 iBoss21 / The Lux Empire | wolves.land | All Rights Reserved
+    © 2026 iBoss21 / LXRCore | lxrcore.com | All Rights Reserved
 ]]
 
--- ═══════════════════════════════════════════════════════════════════════════════
--- 🐺 RESOURCE NAME PROTECTION - RUNTIME CHECK
--- ═══════════════════════════════════════════════════════════════════════════════
-
-local REQUIRED_RESOURCE_NAME = "lxr-multicharacter"
-local currentResourceName = GetCurrentResourceName()
-
-if currentResourceName ~= REQUIRED_RESOURCE_NAME then
-    error(string.format([[
-
-        ═══════════════════════════════════════════════════════════════════════════════
-        ❌ CRITICAL ERROR: RESOURCE NAME MISMATCH ❌
-        ═══════════════════════════════════════════════════════════════════════════════
-
-        Expected: %s
-        Got: %s
-
-        This resource is branded and must maintain the correct name.
-        Rename the folder to "%s" to continue.
-
-        🐺 wolves.land - The Land of Wolves
-
-        ═══════════════════════════════════════════════════════════════════════════════
-
-    ]], REQUIRED_RESOURCE_NAME, currentResourceName, REQUIRED_RESOURCE_NAME))
-end
-
-Config = {}
+Config = Config or {}
 
 -- ████████████████████████████████████████████████████████████████████████████████
 -- ████████████████████████ SERVER BRANDING & INFO ████████████████████████████████
 -- ████████████████████████████████████████████████████████████████████████████████
 
 Config.ServerInfo = {
-    name = 'The Land of Wolves 🐺',
-    developer = 'iBoss21 / The Lux Empire',
-    website = 'https://www.wolves.land',
-    discord = 'https://discord.gg/CrKcWdfd3A',
-    github = 'https://github.com/iBoss21',
-    store = 'https://theluxempire.tebex.io',
+    name    = 'The Land of Wolves',   -- Shown in the NUI header
+    tagline = 'მგლების მიწა',        -- Optional second line (leave '' to hide)
+    website = 'https://www.lxrcore.com',
 }
 
 -- ████████████████████████████████████████████████████████████████████████████████
--- ████████████████████████ FRAMEWORK CONFIGURATION ███████████████████████████████
+-- ████████████████████████ LANGUAGE CONFIGURATION ████████████████████████████████
 -- ████████████████████████████████████████████████████████████████████████████████
 
---[[
-    Framework Priority (in order):
-    1. LXR-Core  (Primary)
-    2. RSG-Core  (Primary)
-    3. VORP Core (Supported)
-]]
-
-Config.Framework = 'lxr-core' -- 'lxr-core', 'rsg-core', 'vorp_core'
+Config.Lang = 'en' -- 'en' | 'ka' (locales/*.lua). The NUI receives the same bundle.
 
 -- ████████████████████████████████████████████████████████████████████████████████
--- ████████████████████████ SPAWN CONFIGURATION ███████████████████████████████████
+-- ████████████████████████ CHARACTER SLOTS ███████████████████████████████████████
 -- ████████████████████████████████████████████████████████████████████████████████
 
--- Enable/Disable starting apartments feature
--- If disabled, characters will spawn at the default location (Config.DefaultSpawn)
-Config.StartingApartment = false
-
--- Coordinates for character preview screen (interior)
--- This is where the interior is loaded, and characters are previewed.
-Config.Interior = vector3(-814.89, 181.95, 76.85)
-
--- Default spawn location coordinates if starting apartments are disabled
-Config.DefaultSpawn = vector3(-1035.71, -2731.87, 12.86)
-
--- Ped (character) coordinates for the preview screen
-Config.PedCoords = vector4(-813.97, 176.22, 76.74, -7.5)
-
--- Coordinates to hide the actual player ped while in character selection mode
-Config.HiddenCoords = vector4(-812.23, 182.54, 76.74, 156.5)
-
--- Camera coordinates for character preview screen
-Config.CamCoords = vector4(-813.46, 178.95, 76.85, 174.5)
-
--- ████████████████████████████████████████████████████████████████████████████████
--- ████████████████████████ CHARACTER LIMITS ██████████████████████████████████████
--- ████████████████████████████████████████████████████████████████████████████████
-
--- Default maximum number of characters a player can create
-Config.DefaultNumberOfCharacters = 5
-
--- Optional: Define the number of characters for specific players by their Rockstar license
-Config.PlayersNumberOfCharacters = {
-    { license = "license:xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx", numberOfChars = 2 },
+Config.Characters = {
+    default   = 5,   -- Slots per license (falls back to lxr-core Config.Player.maxCharacters when nil)
+    -- Per-license overrides: ['license:xxxx'] = 8
+    overrides = {},
+    -- ACE-based bonus slots: players with the ace get max(default, slots)
+    aceSlots  = { ['lxrcore.admin'] = 10, ['lxrcore.god'] = 20 },
 }
 
 -- ████████████████████████████████████████████████████████████████████████████████
--- ████████████████████████ RANDOM SPAWN CONFIGURATION ████████████████████████████
+-- ████████████████████████ CREATION RULES (validated on the server) ██████████████
 -- ████████████████████████████████████████████████████████████████████████████████
 
--- Enable/Disable random spawn locations upon character creation or respawn
-Config.RandomSpawnsEnabled = true
-
--- List of random spawn locations (coordinates and optional heading for direction)
-Config.RandomSpawnLocations = {
-    { coords = vector4(-1044.71, -2745.87, 12.86, 180.0) }, -- Beach area
-    { coords = vector4(425.10, -806.20, 29.49, 90.0) },     -- City square
-    { coords = vector4(-500.34, 52.54, 52.38, 0.0) },       -- Quiet neighborhood
-    { coords = vector4(200.12, 6600.45, 31.87, 270.0) },    -- Countryside
-    { coords = vector4(-1600.13, -300.85, 50.65, 45.0) },   -- Hilltop location
+Config.Creation = {
+    nameMin        = 2,
+    nameMax        = 20,
+    namePattern    = "^[%a%s'%-]+$",  -- letters, spaces, apostrophes, hyphens (Lua pattern, ASCII letters)
+    allowUnicodeNames = true,          -- Accept Georgian / accented names (validated by length and the blocklist only)
+    birthYearMin   = 1830,
+    birthYearMax   = 1899,
+    nationalityMax = 30,
+    genders        = { [0] = 'male', [1] = 'female' },
+    -- Words that may not appear in first/last names (lower-case, substring match)
+    blockedWords   = { 'admin', 'moderator', 'lxrcore', 'nigger', 'faggot', 'hitler' },
+    starterItems   = nil,  -- nil → LXRShared.StarterItems from lxr-core; or { { item = 'water', amount = 2 } }
+    createCooldownMs = 5000, -- Per player, between create attempts
 }
 
--- Function to select a random spawn location from the list
-function Config.GetRandomSpawnLocation()
-    local spawnCount = #Config.RandomSpawnLocations
-    if spawnCount > 0 then
-        local randomIndex = math.random(1, spawnCount)
-        return Config.RandomSpawnLocations[randomIndex].coords
-    else
-        return Config.DefaultSpawn
-    end
-end
+-- ████████████████████████████████████████████████████████████████████████████████
+-- ████████████████████████ SELECTION SCENE ███████████████████████████████████████
+-- ████████████████████████████████████████████████████████████████████████████████
+
+Config.Scene = {
+    -- Hidden interior far from the map (Guarma cliff) — players are frozen here while choosing
+    playerCoords  = vector4(-562.91, -3776.25, 237.63, 90.0),
+    pedCoords     = vector4(-558.91, -3776.25, 237.63, 90.0),   -- preview ped
+    camera        = { coords = vector3(-561.20, -3776.22, 239.60), rot = vector3(-20.0, 0.0, 270.0), fov = 40.0 },
+    cameraIntro   = { coords = vector3(-555.93, -3778.71, 238.60), rot = vector3(-20.0, 0.0, 83.0), durationMs = 2500 },
+    imaps         = { -1699673416, 1679934574, 183712523 },      -- interior imaps to request
+    lightRange    = 6.0,   -- point light on the preview ped (0 = disabled)
+    timecycle     = 'hud_def_blur',
+    fadeMs        = 800,
+    -- Fallback preview models when no appearance is stored (male, female)
+    previewModels = { [0] = 'mp_male', [1] = 'mp_female' },
+}
+
+-- ████████████████████████████████████████████████████████████████████████████████
+-- ████████████████████████ INTEGRATIONS & EVENTS █████████████████████████████████
+-- ████████████████████████████████████████████████████████████████████████████████
+
+Config.Integrations = {
+    -- Appearance resource used to preview / apply skins (must export loadSkin, loadClothes, RequestAndSetModel)
+    appearance = { resource = 'lxr-clothing', table = 'playerskins' },
+    -- Fired (client, on the loading player) after a character is loaded: (cData, isNew)
+    afterSelect = 'lxr-spawn:client:setupSpawnUI',
+    afterCreate = 'lxr-spawn:client:setupSpawnUI',
+    -- Client event that opens the appearance creator for brand-new characters (nil = skip)
+    newCharacterAppearance = 'lxr-clothing:client:newPlayer',
+}
+
+-- ████████████████████████████████████████████████████████████████████████████████
+-- ████████████████████████ SECURITY & ANTI-ABUSE █████████████████████████████████
+-- ████████████████████████████████████████████████████████████████████████████████
+
+Config.Security = {
+    rateLimit = { burst = 12, windowMs = 10000 },  -- NUI-originated server events per player
+}
+
+-- ████████████████████████████████████████████████████████████████████████████████
+-- ████████████████████████ DEBUG SETTINGS ████████████████████████████████████████
+-- ████████████████████████████████████████████████████████████████████████████████
+
+Config.Debug = false
+
+-- ████████████████████████████████████████████████████████████████████████████████
+-- ████████████████████████ END OF CONFIGURATION ██████████████████████████████████
+-- ████████████████████████████████████████████████████████████████████████████████
