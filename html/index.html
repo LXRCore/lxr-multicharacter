@@ -1,6 +1,6 @@
 <!doctype html>
 <!--
-    🐺 LXR-MULTICHARACTER — Character selection NUI
+    LXR-MULTICHARACTER — Character selection NUI
     Vanilla HTML/CSS/JS · LXRCore design tokens · Georgian-safe font stack · no CDN
     © 2026 iBoss21 / LXRCore | lxrcore.com | All Rights Reserved
 -->
@@ -9,11 +9,12 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>LXR Multicharacter</title>
+    <link rel="stylesheet" href="lxr-ui.css">
     <link rel="stylesheet" href="style.css">
 </head>
-<body>
+<body class="lxr">
 <div id="app" class="hidden">
-    <aside class="lxr-panel lxr-panel--list">
+    <aside class="lxr-hit lxr-panel lxr-panel--list">
         <header class="lxr-banner">
             <div class="lxr-banner__avatar-wrap">
                 <img id="brand-logo" class="lxr-banner__avatar" src="img/lxrcore-logo.png" alt="LXRCore">
@@ -24,7 +25,7 @@
             </div>
         </header>
 
-        <div class="lxr-panel__head">
+        <div class="lxr-hit lxr-panel__head">
             <h1 id="t-title" class="lxr-title">Choose your character</h1>
             <p id="t-subtitle" class="lxr-muted"></p>
             <p id="slots" class="lxr-slots"></p>
@@ -37,12 +38,12 @@
 
         <ul id="character-list" class="lxr-list lxr-scroll-minimal"></ul>
 
-        <footer class="lxr-panel__foot">
+        <footer class="lxr-hit lxr-panel__foot">
             <button id="btn-disconnect" class="cfg-btn cfg-btn--ghost">Leave server</button>
         </footer>
     </aside>
 
-    <section class="lxr-panel lxr-panel--detail" id="detail" hidden>
+    <section class="lxr-hit lxr-panel lxr-panel--detail" id="detail" hidden>
         <h2 id="detail-name" class="lxr-title lxr-title--lg"></h2>
         <dl class="lxr-facts">
             <div><dt id="t-job">Occupation</dt><dd id="d-job"></dd></div>
@@ -60,7 +61,7 @@
 
     <!-- create modal -->
     <div id="modal-create" class="modal hidden">
-        <form id="form-create" class="cfg-modal" autocomplete="off">
+        <form id="form-create" class="lxr-hit cfg-modal" autocomplete="off">
             <h2 id="t-create-title" class="lxr-title">Create a character</h2>
             <div class="cfg-grid">
                 <label><span id="t-firstname">First name</span><input class="cfg-input" name="firstname" maxlength="20" required></label>
@@ -74,7 +75,7 @@
                 <label><input type="radio" name="gender" value="1"><span id="t-female">Female</span></label>
             </fieldset>
             <p id="create-error" class="lxr-error" hidden></p>
-            <div class="cfg-modal__footer">
+            <div class="lxr-hit cfg-modal__footer">
                 <button type="button" id="btn-create-cancel" class="cfg-btn cfg-btn--ghost">Cancel</button>
                 <button type="submit" id="btn-create-confirm" class="cfg-btn cfg-btn--primary">Create</button>
             </div>
@@ -83,9 +84,9 @@
 
     <!-- delete modal -->
     <div id="modal-delete" class="modal hidden">
-        <div class="cfg-modal">
+        <div class="lxr-hit cfg-modal">
             <p id="delete-text" class="lxr-lead"></p>
-            <div class="cfg-modal__footer">
+            <div class="lxr-hit cfg-modal__footer">
                 <button type="button" id="btn-delete-cancel" class="cfg-btn cfg-btn--ghost">Cancel</button>
                 <button type="button" id="btn-delete-confirm" class="cfg-btn cfg-btn--danger">Yes, delete</button>
             </div>

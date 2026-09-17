@@ -1,27 +1,27 @@
 /* ═══════════════════════════════════════════════════════════════════════════
-   🐺 LXR-MULTICHARACTER — NUI stylesheet (LXRCore design tokens)
+   LXR-MULTICHARACTER — NUI stylesheet (LXRCore design tokens)
    Vanilla CSS, CEF-safe (no nesting, no color-mix, no oklab).
    © 2026 iBoss21 / LXRCore | lxrcore.com | All Rights Reserved
    ═══════════════════════════════════════════════════════════════════════════ */
 
 :root {
-    --lxr-font-sans: system-ui, "Segoe UI", "Sylfaen", "DejaVu Sans", Tahoma, Arial, sans-serif;
-    --bg: #100e0c;
-    --surface: #1a1512;
-    --card: #221c17;
-    --text: #ebe3d4;
-    --muted: rgba(200, 185, 165, .72);
-    --accent: #c4a574;
-    --danger: #a83a3a;
-    --ok: #6f9a5a;
+    --lxr-font-sans: 'LXR Plain', 'LXR Ka', Inter, 'Segoe UI', 'Sylfaen', sans-serif;
+    --bg: #050506;
+    --surface: #0e0e11;
+    --card: #0e0e11;
+    --text: #f4f2ee;
+    --muted: #9b9aa0;
+    --accent: #c21c37;
+    --danger: #c21c37;
+    --ok: #3f9a6b;
     --panel-side-gap: 44px;
     --panel-max-w: min(1400px, calc(100vw - 88px));
     --panel-max-h: min(920px, calc(100vh - 32px));
     --lxr-scroll-size: 5px;
-    --lxr-scroll-thumb: rgba(196, 165, 116, .38);
-    --cfg-r: 12px;
-    --cfg-r-sm: 8px;
-    --cfg-edge: rgba(196, 165, 116, .18);
+    --lxr-scroll-thumb: rgba(244,242,238,.26);
+    --cfg-r: 0;
+    --cfg-r-sm: 0;
+    --cfg-edge: #1e1e23;
     --img-lxrcore-logo: url("img/lxrcore-logo.png");
 }
 
@@ -37,7 +37,7 @@ body { margin: 0; background: transparent; color: var(--text); overflow: hidden;
 
 /* ── panels ─────────────────────────────────────────────────────────────── */
 .lxr-panel {
-    background: rgba(16, 14, 12, .88);
+    background: #0e0e11;
     border: 1px solid var(--cfg-edge);
     border-radius: var(--cfg-r);
     box-shadow: 0 24px 60px -20px rgba(0, 0, 0, .9);
@@ -53,7 +53,7 @@ body { margin: 0; background: transparent; color: var(--text); overflow: hidden;
 .lxr-banner {
     display: flex; align-items: center; gap: 14px;
     padding: 18px 24px; border-bottom: 1px solid var(--cfg-edge);
-    background: linear-gradient(180deg, rgba(196, 165, 116, .08), transparent);
+    background: linear-gradient(180deg, rgba(244,242,238,.03), transparent);
 }
 .lxr-banner__avatar-wrap {
     width: 52px; height: 52px; border-radius: 10px; flex: 0 0 auto;
@@ -70,7 +70,7 @@ body { margin: 0; background: transparent; color: var(--text); overflow: hidden;
 .lxr-muted { margin: 4px 0 0; color: var(--muted); font-size: 13px; }
 .lxr-slots { margin: 10px 0 0; font-size: 12px; letter-spacing: .12em; text-transform: uppercase; color: var(--accent); }
 .lxr-lead { font-size: 15px; line-height: 1.5; margin: 0 0 18px; }
-.lxr-error { color: #e08a8a; font-size: 13px; margin: 8px 0 0; }
+.lxr-error { color: #c21c37; font-size: 13px; margin: 8px 0 0; }
 
 /* ── list ───────────────────────────────────────────────────────────────── */
 .lxr-list { list-style: none; margin: 0; padding: 8px 16px 8px 24px; overflow-y: auto; flex: 1 1 auto; }
@@ -83,10 +83,10 @@ body { margin: 0; background: transparent; color: var(--text); overflow: hidden;
     transition: border-color 160ms ease, transform 160ms ease, background 160ms ease;
 }
 .lxr-card:hover { border-color: var(--accent); transform: translateX(2px); }
-.lxr-card--active { border-color: var(--accent); background: rgba(196, 165, 116, .10); }
+.lxr-card--active { border-color: var(--accent); background: rgba(194,28,55,.18); }
 .lxr-card--empty { border-style: dashed; color: var(--muted); justify-content: center; }
 .lxr-card__slot {
-    width: 34px; height: 34px; border-radius: 50%; flex: 0 0 auto;
+    width: 34px; height: 34px; border-radius: 0; flex: 0 0 auto;
     border: 1px solid var(--accent); color: var(--accent);
     display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 700;
 }
@@ -103,7 +103,7 @@ body { margin: 0; background: transparent; color: var(--text); overflow: hidden;
 /* ── loading ────────────────────────────────────────────────────────────── */
 .lxr-loading { display: flex; align-items: center; gap: 12px; padding: 24px; color: var(--muted); font-size: 13px; }
 .lxr-spinner {
-    width: 18px; height: 18px; border-radius: 50%;
+    width: 18px; height: 18px; border-radius: 0;
     border: 2px solid var(--cfg-edge); border-top-color: var(--accent);
     animation: lxr-spin 900ms linear infinite;
 }
@@ -119,9 +119,9 @@ body { margin: 0; background: transparent; color: var(--text); overflow: hidden;
 }
 .cfg-btn:hover { border-color: var(--accent); transform: translateY(-1px); }
 .cfg-btn:disabled { opacity: .5; cursor: not-allowed; transform: none; }
-.cfg-btn--primary { background: var(--accent); color: #1a1512; border-color: var(--accent); }
-.cfg-btn--primary:hover { background: #d4b584; }
-.cfg-btn--danger { background: transparent; border-color: rgba(168, 58, 58, .6); color: #e08a8a; flex: 0 0 auto; }
+.cfg-btn--primary { background: var(--accent); color: #050506; border-color: var(--accent); }
+.cfg-btn--primary:hover { background: #c21c37; }
+.cfg-btn--danger { background: transparent; border-color: rgba(168, 58, 58, .6); color: #c21c37; flex: 0 0 auto; }
 .cfg-btn--danger:hover { background: rgba(168, 58, 58, .18); border-color: var(--danger); }
 .cfg-btn--ghost { background: transparent; }
 .cfg-btn--block { width: 100%; }
@@ -163,3 +163,29 @@ body { margin: 0; background: transparent; color: var(--text); overflow: hidden;
     .lxr-panel--list, .lxr-panel--detail { width: 100%; }
     .lxr-panel--list { height: auto; max-height: 60vh; }
 }
+
+/* ── LXR UI Kit skin (loaded after lxr-ui.css; no second hue, radius 0) ── */
+.lxr-title, .lxr-title--lg, .lxr-banner__title, .inv-head__title, .lxr-card__name, .cfg-modal h2 { font-family: 'LXR Cut', Fraunces, Georgia, serif; font-weight: 500; letter-spacing: -0.018em; }
+.lxr-title { font-size: 28px; line-height: 0.98; } .lxr-title--lg { font-size: 34px; } .lxr-banner__title { font-size: 22px; }
+.lxr-slots, .inv-weight, .lxr-card__kind, .lxr-card__slot, .inv-amount, .cfg-btn, .inv-slot--hotbar::before, .inv-slot__price, .lxr-banner__sub { font-family: 'LXR Code', 'JetBrains Mono', monospace; text-transform: uppercase; letter-spacing: 0.18em; font-size: 11px; }
+.cfg-btn { font-weight: 500; padding: 12px 22px; background: transparent; border: 1px solid rgba(244,242,238,.26); color: #f4f2ee; transform: none !important; }
+.cfg-btn:hover { border-color: #f4f2ee; background: rgba(244,242,238,.07); }
+.cfg-btn--primary { background: #f4f2ee; color: #050506; border-color: #f4f2ee; }
+.cfg-btn--primary:hover { background: #c21c37; border-color: #c21c37; color: #f4f2ee; }
+.cfg-btn--danger { background: transparent; border-color: #c21c37; color: #c21c37; }
+.cfg-btn--danger:hover { background: #c21c37; color: #f4f2ee; }
+.lxr-card { border: 0; border-top: 1px solid #1e1e23; background: transparent; padding: 14px 4px; transform: none !important; }
+.lxr-card:hover { background: rgba(244,242,238,.03); }
+.lxr-card--active { background: transparent; }
+.lxr-card--active .lxr-card__name { color: #c21c37; }
+.lxr-card__slot { width: auto; height: auto; border: 0; color: #c21c37; font-size: 11px; min-width: 28px; justify-content: flex-start; }
+.lxr-card__name { font-size: 20px; }
+.lxr-card--empty { border-style: solid; border-top: 1px solid #1e1e23; color: #58575e; }
+.lxr-banner, .inv-head { background: none; }
+.lxr-banner__avatar-wrap { background: #050506; border: 1px solid #1e1e23; padding: 4px; }
+.inv-slot__tile { background: rgba(244,242,238,.05); color: #9b9aa0; font-family: 'LXR Cut', serif; }
+.inv-slot--filled:hover, .inv-slot--selected, .inv-slot--over { border-color: #c21c37; }
+.inv-slot__amount { font-family: 'LXR Code', monospace; background: #050506; border-radius: 0; }
+.cfg-input { font-family: 'LXR Plain', Inter, sans-serif; background: #050506; border-color: #1e1e23; }
+.cfg-input:focus { border-color: rgba(244,242,238,.4); }
+.lxr-panel, .inv-panel { box-shadow: 0 24px 60px -24px rgba(0,0,0,.9), 0 1px 0 rgba(244,242,238,.04) inset; }
