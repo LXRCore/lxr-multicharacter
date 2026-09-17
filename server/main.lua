@@ -207,7 +207,7 @@ end
 
 LXRCore.Callback.Register('lxr-multicharacter:server:characters', function(src)
     if limited(src) then return nil end
-    return { characters = characterList(src), max = maxCharacters(src), locale = Lang.bundle(), server = Config.ServerInfo }
+    return { characters = characterList(src), max = maxCharacters(src), locale = Lang.bundle(), server = LXRCore.Brand }
 end)
 
 LXRCore.Callback.Register('lxr-multicharacter:server:appearance', function(src, citizenid)
