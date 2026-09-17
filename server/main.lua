@@ -8,10 +8,10 @@
 
     🐺 LXR Core - Multicharacter Server
 
-    Everything that matters happens here: listing characters for the license,
-    validating new-character data, enforcing slot limits, selecting (Login),
-    deleting (ownership enforced by the core) and handing off to spawn /
-    appearance. The client only relays UI intent.
+    Everything that matters happens here: listing characters for the licence,
+    validating new-character data (identity + traits), enforcing slot limits,
+    selecting (Login), deleting (ownership enforced by the core) and handing
+    off to spawn / appearance. The client only relays UI intent.
 
     Developer:   iBoss21 / LXRCore
     Website:     https://www.lxrcore.com
@@ -21,19 +21,22 @@
 local LXRCore = exports['lxr-core']:GetCoreObject()
 local RES = GetCurrentResourceName()
 
+MC = MC or {}
+
 local buckets = {}
 local lastCreate = {}
 local preloaded = {} -- source → true once other resources had time to react to PlayerLoaded
 
-local function limited(src)
+function MC.Limited(src)
     local rl = Config.Security.rateLimit
     if LXRCore.RateLimit(buckets, src, rl.burst, rl.windowMs) then return false end
     LXRCore.Log.warn('multicharacter', 'rate limit exceeded', { source = src })
     return true
 end
+local limited = MC.Limited
 
-local function notify(src, key, kind)
-    TriggerClientEvent('LXRCore:Notify', src, Lang:t(key), kind or 'error')
+local function notify(src, key, kind, vars)
+    TriggerClientEvent('LXRCore:Notify', src, Lang:t(key, vars), kind or 'error')
 end
 
 -- ═══════════════════════════════════════════════════════════════════════════════
@@ -53,6 +56,15 @@ local function maxCharacters(src)
 end
 exports('GetMaxCharacters', maxCharacters)
 
+local function traitNames(md)
+    local t = type(md) == 'table' and md.traits
+    if type(t) ~= 'table' or not t.locked then return nil end
+    local out = { perks = {}, flaws = {} }
+    for _, id in ipairs(t.perks or {}) do out.perks[#out.perks + 1] = Lang:t('traits.' .. id .. '.name') end
+    for _, id in ipairs(t.flaws or {}) do out.flaws[#out.flaws + 1] = Lang:t('traits.' .. id .. '.name') end
+    return out
+end
+
 local function summarise(row)
     local charinfo = row.charinfo or {}
     local job = row.job or {}
@@ -70,6 +82,7 @@ local function summarise(row)
         cash = tonumber(money.cash) or 0,
         bank = tonumber(money.bank) or 0,
         lastPlayed = row.last_updated and tostring(row.last_updated) or '',
+        traits = traitNames(row.metadata),
     }
 end
 
@@ -99,7 +112,7 @@ local function ownsCharacter(src, citizenid)
 end
 
 -- ═══════════════════════════════════════════════════════════════════════════════
--- ✅ CREATION VALIDATION
+-- ✅ CREATION VALIDATION (identity)
 -- ═══════════════════════════════════════════════════════════════════════════════
 
 local function utf8len(s)
@@ -133,7 +146,7 @@ local function validBirthdate(value)
 end
 
 ---@return table|nil charinfo, string|nil errorKey
-local function validateCreation(data)
+local function validateIdentity(data)
     if type(data) ~= 'table' then return nil, 'error.invalid_data' end
     local okF, first = validName(data.firstname)
     if not okF then return nil, 'error.invalid_firstname' end
@@ -191,7 +204,7 @@ local function handOff(src, isNew)
     local Player = LXRCore.Functions.GetPlayer(src)
     if not Player then return end
     local pd = Player.PlayerData
-    local cData = { citizenid = pd.citizenid, cid = pd.cid, charinfo = pd.charinfo, job = pd.job, money = pd.money, position = pd.position }
+    local cData = { citizenid = pd.citizenid, cid = pd.cid, charinfo = pd.charinfo, job = pd.job, money = pd.money, position = pd.position, traits = pd.metadata.traits }
     TriggerClientEvent('lxr-multicharacter:client:closeUI', src)
     local ev = isNew and Config.Integrations.afterCreate or Config.Integrations.afterSelect
     if ev then TriggerClientEvent(ev, src, cData, isNew) end
@@ -207,7 +220,14 @@ end
 
 LXRCore.Callback.Register('lxr-multicharacter:server:characters', function(src)
     if limited(src) then return nil end
-    return { characters = characterList(src), max = maxCharacters(src), locale = Lang.bundle(), server = LXRCore.Brand }
+    return {
+        characters = characterList(src),
+        max = maxCharacters(src),
+        locale = Lang.bundle(),
+        server = LXRCore.Brand,
+        traits = MC.Traits.Payload(),
+        creation = { birthYearMin = Config.Creation.birthYearMin, birthYearMax = Config.Creation.birthYearMax, nameMin = Config.Creation.nameMin, nameMax = Config.Creation.nameMax },
+    }
 end)
 
 LXRCore.Callback.Register('lxr-multicharacter:server:appearance', function(src, citizenid)
@@ -238,6 +258,7 @@ RegisterNetEvent('lxr-multicharacter:server:select', function(citizenid)
     end
 end)
 
+---data = { identity = { firstname, lastname, birthdate, gender, nationality }, traits = { perks, flaws, skills } }
 RegisterNetEvent('lxr-multicharacter:server:create', function(data)
     local src = source
     if limited(src) then return end
@@ -246,20 +267,33 @@ RegisterNetEvent('lxr-multicharacter:server:create', function(data)
         return notify(src, 'error.too_fast')
     end
     lastCreate[src] = now
+    if type(data) ~= 'table' then return notify(src, 'error.invalid_data') end
 
     local list = characterList(src)
     local max = maxCharacters(src)
     if #list >= max then return notify(src, 'error.character_limit') end
-    local charinfo, err = validateCreation(data)
+
+    -- validate everything BEFORE touching the database
+    local charinfo, err = validateIdentity(data.identity or data)
     if not charinfo then return notify(src, err) end
+    local summary, terr = MC.Traits.Validate(data.traits or {})
+    if not summary then
+        TriggerClientEvent('lxr-multicharacter:client:createFailed', src, 'traits')
+        return notify(src, terr)
+    end
     local cid = freeCid(list, max)
     if not cid then return notify(src, 'error.character_limit') end
 
     if LXRCore.Player.Login(src, false, { cid = cid, charinfo = charinfo }) then
         waitPreload(src)
+        local Player = LXRCore.Functions.GetPlayer(src)
+        if Player and Config.TraitFlow.enabled then
+            MC.Traits.Apply(Player, summary, 'create')
+        end
         giveStarterItems(src)
         handOff(src, true)
     else
+        TriggerClientEvent('lxr-multicharacter:client:createFailed', src, 'login')
         notify(src, 'error.login_failed')
     end
 end)

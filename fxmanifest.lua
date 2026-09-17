@@ -6,12 +6,13 @@
     ███████╗██╔╝ ██╗██║  ██║      ██║ ╚═╝ ██║╚██████╔╝███████╗██║   ██║╚██████╗██║  ██║██║  ██║██║  ██║
     ╚══════╝╚═╝  ╚═╝╚═╝  ╚═╝      ╚═╝     ╚═╝ ╚═════╝ ╚══════╝╚═╝   ╚═╝ ╚═════╝╚═╝  ╚═╝╚═╝  ╚═╝╚═╝  ╚═╝
 
-    🐺 LXR Core - Multicharacter Resource Manifest
+    🐺 LXR Core - Multicharacter & Character Traits — Resource Manifest
 
-    Character selection and creation for LXRCore v3: the first screen a player
-    sees. Lists characters, previews their appearance, creates new characters
-    with server-side validation and hands the loaded character to the spawn /
-    appearance resources.
+    The first screen a player sees on wolves.land. Lists the characters on a
+    licence, previews their appearance, creates new characters through a
+    three-step "personal file" (identity → character & life experience →
+    skills), validates every choice on the server and hands the loaded
+    character to the spawn / appearance resources.
 
     ═══════════════════════════════════════════════════════════════════════════════
     SERVER INFORMATION
@@ -26,7 +27,7 @@
 
     ═══════════════════════════════════════════════════════════════════════════════
 
-    Version: 2.0.0
+    Version: 3.0.0
     Performance Target: 0.00 ms idle (no loops once a character is loaded)
 
     Framework Support:
@@ -48,19 +49,27 @@ lua54 'yes'
 
 name 'lxr-multicharacter'
 author 'iBoss21 / LXRCore'
-description 'LXRCore v3 character selection and creation'
-version '2.0.0'
+description 'LXRCore v3 character selection, creation and character traits (advantages / disadvantages / skills)'
+version '3.0.0'
 repository 'https://github.com/LXRCore/lxr-multicharacter'
 
 shared_scripts {
     'shared/locale.lua',
     'locales/*.lua',
     'config.lua',
+    'config_traits.lua',
+    'shared/traits.lua',
 }
 
-client_script 'client/main.lua'
+client_scripts {
+    'client/main.lua',
+    'client/effects.lua',
+}
 
-server_script 'server/main.lua'
+server_scripts {
+    'server/traits.lua',
+    'server/main.lua',
+}
 
 ui_page 'html/index.html'
 

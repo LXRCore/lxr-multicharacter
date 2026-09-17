@@ -11,7 +11,8 @@
     Owns the selection scene (camera, hidden interior, preview ped) and the NUI.
     It never decides anything: every button press is relayed to the server,
     which validates and answers. Once a character is loaded the resource is
-    idle (0.00 ms) until /logout re-opens the scene.
+    idle (0.00 ms) until /logout re-opens the scene or the server asks for the
+    standalone trait screen (legacy characters, /retrait, /resettraits).
 
     Developer:   iBoss21 / LXRCore
     Website:     https://www.lxrcore.com
@@ -21,11 +22,13 @@
 local LXRCore = exports['lxr-core']:GetCoreObject()
 
 local state = {
-    open = false,
+    open = false,        -- selection scene open
+    traitsOnly = false,  -- standalone trait screen (player already in the world)
     cam = nil,
     introCam = nil,
     ped = nil,
     previewToken = 0,
+    heading = nil,
 }
 
 -- ═══════════════════════════════════════════════════════════════════════════════
@@ -104,6 +107,7 @@ local function preview(citizenid, gender)
     SetModelAsNoLongerNeeded(hash)
     if token ~= state.previewToken then DeleteEntity(ped) return end
     state.ped = ped
+    state.heading = s.pedCoords.w
     Citizen.InvokeNative(0x283978A15512B2FE, ped, true) -- SetRandomOutfitVariation
     FreezeEntityPosition(ped, true)
     SetEntityInvincible(ped, true)
@@ -117,6 +121,12 @@ local function preview(citizenid, gender)
             if data.clothes then app:loadClothes(ped, data.clothes, false) end
         end)
     end
+end
+
+local function rotatePreview(dir)
+    if not state.ped or not DoesEntityExist(state.ped) then return end
+    state.heading = ((state.heading or 0) + (Config.Scene.rotateStep or 22.5) * (dir < 0 and -1 or 1)) % 360
+    SetEntityHeading(state.ped, state.heading)
 end
 
 local function sceneLoop()
@@ -143,7 +153,11 @@ local function sendCharacters()
         SendNUIMessage({ action = 'error', message = 'Could not load characters' })
         return
     end
-    SendNUIMessage({ action = 'characters', characters = payload.characters, max = payload.max, locale = payload.locale, server = payload.server })
+    SendNUIMessage({
+        action = 'characters',
+        characters = payload.characters, max = payload.max, locale = payload.locale,
+        server = payload.server, traits = payload.traits, creation = payload.creation,
+    })
     local first = payload.characters[1]
     if first then preview(first.citizenid, first.gender) else preview(nil, 0) end
 end
@@ -183,6 +197,23 @@ local function closeScene()
     SetEntityVisible(ped, true, false)
 end
 
+-- Standalone trait screen: the player is already in the world (legacy character / retrait)
+local function openTraitsOnly(traits, locale)
+    if state.open or state.traitsOnly then return end
+    state.traitsOnly = true
+    FreezeEntityPosition(PlayerPedId(), true)
+    SetNuiFocus(true, true)
+    SendNUIMessage({ action = 'openTraits', traits = traits, locale = locale, server = LXRCore.Brand })
+end
+
+local function closeTraitsOnly()
+    if not state.traitsOnly then return end
+    state.traitsOnly = false
+    SetNuiFocus(false, false)
+    SendNUIMessage({ action = 'close' })
+    FreezeEntityPosition(PlayerPedId(), false)
+end
+
 -- ═══════════════════════════════════════════════════════════════════════════════
 -- 📡 EVENTS
 -- ═══════════════════════════════════════════════════════════════════════════════
@@ -192,6 +223,9 @@ RegisterNetEvent('lxr-multicharacter:client:chooseChar', function() CreateThread
 RegisterNetEvent('lxr-multicharacter:client:closeUI', function() closeScene() end)
 RegisterNetEvent('lxr-multicharacter:client:closeNUI', function() closeScene() end)             -- legacy name
 RegisterNetEvent('lxr-multicharacter:client:refresh', function() if state.open then CreateThread(sendCharacters) end end)
+RegisterNetEvent('lxr-multicharacter:client:createFailed', function(stage) SendNUIMessage({ action = 'createFailed', stage = stage }) end)
+RegisterNetEvent('lxr-multicharacter:client:openTraits', function(traits, locale) openTraitsOnly(traits, locale) end)
+RegisterNetEvent('lxr-multicharacter:client:closeTraits', function() closeTraitsOnly() end)
 
 -- ═══════════════════════════════════════════════════════════════════════════════
 -- 🖱 NUI CALLBACKS — relay only
@@ -203,6 +237,12 @@ RegisterNUICallback('preview', function(data, cb)
     CreateThread(function() preview(data and data.citizenid or nil, data and data.gender or 0) end)
 end)
 
+RegisterNUICallback('rotate', function(data, cb)
+    cb({})
+    if not state.open then return end
+    rotatePreview(tonumber(data and data.dir) or 1)
+end)
+
 RegisterNUICallback('select', function(data, cb)
     cb({})
     if not state.open or type(data) ~= 'table' or type(data.citizenid) ~= 'string' then return end
@@ -212,11 +252,26 @@ end)
 
 RegisterNUICallback('create', function(data, cb)
     cb({})
-    if not state.open or type(data) ~= 'table' then return end
+    if not state.open or type(data) ~= 'table' or type(data.identity) ~= 'table' then return end
+    local id = data.identity
     TriggerServerEvent('lxr-multicharacter:server:create', {
-        firstname = data.firstname, lastname = data.lastname, birthdate = data.birthdate,
-        gender = tonumber(data.gender) or 0, nationality = data.nationality,
+        identity = {
+            firstname = id.firstname, lastname = id.lastname, birthdate = id.birthdate,
+            gender = tonumber(id.gender) or 0, nationality = id.nationality,
+        },
+        traits = type(data.traits) == 'table' and { perks = data.traits.perks, flaws = data.traits.flaws, skills = data.traits.skills } or {},
     })
+end)
+
+RegisterNUICallback('lockTraits', function(data, cb)
+    cb({})
+    if not state.traitsOnly or type(data) ~= 'table' then return end
+    TriggerServerEvent('lxr-multicharacter:server:lockTraits', { perks = data.perks, flaws = data.flaws, skills = data.skills })
+end)
+
+RegisterNUICallback('closeTraits', function(_, cb)
+    cb({})
+    closeTraitsOnly()
 end)
 
 RegisterNUICallback('delete', function(data, cb)
@@ -247,6 +302,7 @@ end)
 AddEventHandler('onResourceStop', function(res)
     if res ~= GetCurrentResourceName() then return end
     closeScene()
+    closeTraitsOnly()
 end)
 
 -- ═══════════════════════════════════════════════════════════════════════════════

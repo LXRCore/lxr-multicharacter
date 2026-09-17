@@ -1,97 +1,197 @@
-<!doctype html>
-<!--
-    LXR-MULTICHARACTER — Character selection NUI
-    Vanilla HTML/CSS/JS · LXRCore design tokens · Georgian-safe font stack · no CDN
-    © 2026 iBoss21 / LXRCore | lxrcore.com | All Rights Reserved
--->
+<!DOCTYPE html>
+<!-- ═══════════════════════════════════════════════════════════════════════════
+     LXR-MULTICHARACTER — NUI
+     Character selection · Personal file (identity) · Character & life
+     experience (traits) · Skills & experience. Vanilla HTML/CSS/JS, no build.
+     © 2026 iBoss21 / LXRCore | lxrcore.com | All Rights Reserved
+     ═══════════════════════════════════════════════════════════════════════════ -->
 <html lang="en">
 <head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>LXR Multicharacter</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>lxr-multicharacter</title>
     <link rel="stylesheet" href="lxr-ui.css">
     <link rel="stylesheet" href="style.css">
 </head>
 <body class="lxr">
 <div id="app" class="hidden">
-    <aside class="lxr-hit lxr-panel lxr-panel--list">
-        <header class="lxr-banner">
-            <div class="lxr-banner__avatar-wrap">
-                <img id="brand-logo" class="lxr-banner__avatar" src="img/lxrcore-logo.png" alt="LXRCore">
+
+    <!-- ═════════════════════════ CHARACTER LIST ═════════════════════════ -->
+    <section id="view-list" class="view">
+        <aside class="lxr-hit panel panel--list">
+            <header class="banner">
+                <div class="banner__logo"><img src="img/lxrcore-logo.png" alt="" onerror="this.style.display='none'"></div>
+                <div>
+                    <div class="banner__title" id="srv-name">The Land of Wolves</div>
+                    <div class="banner__sub" id="srv-tagline"></div>
+                </div>
+            </header>
+            <div class="panel__head">
+                <h1 class="h1" id="t-title"></h1>
+                <p class="muted" id="t-subtitle"></p>
+                <p class="eyebrow" id="t-slots"></p>
             </div>
-            <div class="lxr-banner__text">
-                <div id="server-name" class="lxr-banner__title">LXRCore</div>
-                <div id="server-tagline" class="lxr-banner__sub"></div>
+            <ul class="charlist" id="charlist"></ul>
+            <footer class="panel__foot">
+                <button class="btn btn--ghost btn--block" id="btn-disconnect"></button>
+            </footer>
+        </aside>
+
+        <aside class="lxr-hit panel panel--detail hidden" id="detail">
+            <h2 class="h2" id="d-name"></h2>
+            <p class="muted" id="d-job"></p>
+            <dl class="facts">
+                <dt id="l-born"></dt><dd id="d-born"></dd>
+                <dt id="l-nat"></dt><dd id="d-nat"></dd>
+                <dt id="l-cash"></dt><dd id="d-cash"></dd>
+                <dt id="l-bank"></dt><dd id="d-bank"></dd>
+                <dt id="l-last"></dt><dd id="d-last"></dd>
+            </dl>
+            <div class="facts__traits">
+                <div class="eyebrow" id="l-traits"></div>
+                <div class="chips" id="d-traits"></div>
             </div>
-        </header>
+            <div class="row">
+                <button class="btn btn--primary btn--block" id="btn-play"></button>
+                <button class="btn btn--danger" id="btn-delete"></button>
+            </div>
+            <div class="confirm hidden" id="confirm">
+                <p class="confirm__text" id="confirm-text"></p>
+                <div class="row">
+                    <button class="btn btn--danger btn--block" id="btn-confirm"></button>
+                    <button class="btn btn--ghost" id="btn-cancel-delete"></button>
+                </div>
+            </div>
+        </aside>
+    </section>
 
-        <div class="lxr-hit lxr-panel__head">
-            <h1 id="t-title" class="lxr-title">Choose your character</h1>
-            <p id="t-subtitle" class="lxr-muted"></p>
-            <p id="slots" class="lxr-slots"></p>
-        </div>
-
-        <div id="loading" class="lxr-loading">
-            <span class="lxr-spinner"></span>
-            <span id="t-loading">Fetching your characters…</span>
-        </div>
-
-        <ul id="character-list" class="lxr-list lxr-scroll-minimal"></ul>
-
-        <footer class="lxr-hit lxr-panel__foot">
-            <button id="btn-disconnect" class="cfg-btn cfg-btn--ghost">Leave server</button>
-        </footer>
-    </aside>
-
-    <section class="lxr-hit lxr-panel lxr-panel--detail" id="detail" hidden>
-        <h2 id="detail-name" class="lxr-title lxr-title--lg"></h2>
-        <dl class="lxr-facts">
-            <div><dt id="t-job">Occupation</dt><dd id="d-job"></dd></div>
-            <div><dt id="t-born">Born</dt><dd id="d-born"></dd></div>
-            <div><dt id="t-nationality">Nationality</dt><dd id="d-nationality"></dd></div>
-            <div><dt id="t-cash">Cash</dt><dd id="d-cash"></dd></div>
-            <div><dt id="t-bank">Bank</dt><dd id="d-bank"></dd></div>
-            <div><dt id="t-last">Last seen</dt><dd id="d-last"></dd></div>
-        </dl>
-        <div class="lxr-actions">
-            <button id="btn-play" class="cfg-btn cfg-btn--primary">Ride out</button>
-            <button id="btn-delete" class="cfg-btn cfg-btn--danger">Delete</button>
+    <!-- ═════════════════════════ IDENTITY STEP ══════════════════════════ -->
+    <section id="view-identity" class="view hidden">
+        <div class="lxr-hit panel panel--form">
+            <div class="steps">
+                <span class="step step--active" id="s-identity"></span>
+                <span class="step" id="s-traits"></span>
+            </div>
+            <div class="eyebrow eyebrow--red" id="c-file"></div>
+            <h1 class="h1 h1--red" id="c-title"></h1>
+            <p class="muted" id="c-subtitle"></p>
+            <form id="identity" autocomplete="off">
+                <div class="grid2">
+                    <label><span id="l-first"></span><input id="f-first" maxlength="20" required></label>
+                    <label><span id="l-lname"></span><input id="f-last" maxlength="20" required></label>
+                </div>
+                <div class="grid2">
+                    <label><span id="l-birth"></span><input id="f-birth" type="date" min="1830-01-01" max="1889-12-31" required></label>
+                    <label><span id="l-gender"></span>
+                        <div class="seg">
+                            <button type="button" class="seg__btn seg__btn--on" data-gender="0" id="g-male"></button>
+                            <button type="button" class="seg__btn" data-gender="1" id="g-female"></button>
+                        </div>
+                    </label>
+                </div>
+                <label><span id="l-nation"></span><input id="f-nation" maxlength="30"></label>
+                <p class="error hidden" id="identity-error"></p>
+                <div class="row row--end">
+                    <button type="button" class="btn btn--ghost" id="btn-id-back"></button>
+                    <button type="submit" class="btn btn--primary" id="btn-id-next"></button>
+                </div>
+            </form>
         </div>
     </section>
 
-    <!-- create modal -->
-    <div id="modal-create" class="modal hidden">
-        <form id="form-create" class="lxr-hit cfg-modal" autocomplete="off">
-            <h2 id="t-create-title" class="lxr-title">Create a character</h2>
-            <div class="cfg-grid">
-                <label><span id="t-firstname">First name</span><input class="cfg-input" name="firstname" maxlength="20" required></label>
-                <label><span id="t-lastname">Last name</span><input class="cfg-input" name="lastname" maxlength="20" required></label>
-                <label><span id="t-birthdate">Birth date</span><input class="cfg-input" name="birthdate" placeholder="1875-06-12" pattern="\d{4}-\d{2}-\d{2}" required></label>
-                <label><span id="t-nationality-l">Nationality</span><input class="cfg-input" name="nationality" maxlength="30" id="nationality-input"></label>
-            </div>
-            <fieldset class="cfg-gender">
-                <legend id="t-gender">Gender</legend>
-                <label><input type="radio" name="gender" value="0" checked><span id="t-male">Male</span></label>
-                <label><input type="radio" name="gender" value="1"><span id="t-female">Female</span></label>
-            </fieldset>
-            <p id="create-error" class="lxr-error" hidden></p>
-            <div class="lxr-hit cfg-modal__footer">
-                <button type="button" id="btn-create-cancel" class="cfg-btn cfg-btn--ghost">Cancel</button>
-                <button type="submit" id="btn-create-confirm" class="cfg-btn cfg-btn--primary">Create</button>
-            </div>
-        </form>
-    </div>
+    <!-- ═════════════════════════ TRAITS SCREEN ══════════════════════════ -->
+    <section id="view-traits" class="view hidden">
+        <div class="lxr-hit traits">
+            <header class="traits__head">
+                <div>
+                    <div class="eyebrow" id="tr-file"></div>
+                    <h1 class="title-red" id="tr-title"></h1>
+                    <p class="traits__sub" id="tr-sub"></p>
+                </div>
+                <div class="traits__tools">
+                    <button class="tab tab--on" id="tab-traits" data-tab="traits"></button>
+                    <button class="tab" id="tab-skills" data-tab="skills"></button>
+                    <div class="points" id="points-box">
+                        <span class="points__label" id="tr-free-label"></span>
+                        <span class="points__value" id="tr-free">0</span>
+                    </div>
+                </div>
+            </header>
 
-    <!-- delete modal -->
-    <div id="modal-delete" class="modal hidden">
-        <div class="lxr-hit cfg-modal">
-            <p id="delete-text" class="lxr-lead"></p>
-            <div class="lxr-hit cfg-modal__footer">
-                <button type="button" id="btn-delete-cancel" class="cfg-btn cfg-btn--ghost">Cancel</button>
-                <button type="button" id="btn-delete-confirm" class="cfg-btn cfg-btn--danger">Yes, delete</button>
+            <div class="traits__presets">
+                <div class="eyebrow" id="tr-presets-label"></div>
+                <div class="presets" id="presets"></div>
             </div>
+
+            <!-- Tab: traits -->
+            <div class="traits__body" id="pane-traits">
+                <button class="arrow arrow--l" id="rot-l" title="←">&#8249;</button>
+                <div class="col col--perks">
+                    <div class="col__head">
+                        <h2 class="col__title col__title--green" id="tr-perks"></h2>
+                        <span class="col__hint" id="tr-perks-hint"></span>
+                    </div>
+                    <div class="col__scroll" id="list-perks"></div>
+                </div>
+
+                <div class="col col--choice">
+                    <div class="col__head"><span class="eyebrow" id="tr-choice"></span></div>
+                    <div class="choice" id="choice"></div>
+                    <div class="choice__foot">
+                        <div class="choice__counts">
+                            <span id="tr-count">0 / 12</span>
+                            <span class="choice__refund" id="tr-refund-note"></span>
+                        </div>
+                        <p class="choice__status" id="tr-status"></p>
+                        <button class="btn btn--lock" id="btn-lock" disabled></button>
+                        <p class="choice__desc" id="tr-preset-desc"></p>
+                        <button class="btn btn--ghost btn--sm hidden" id="btn-later"></button>
+                    </div>
+                </div>
+
+                <div class="col col--flaws">
+                    <div class="col__head">
+                        <h2 class="col__title col__title--red" id="tr-flaws"></h2>
+                        <span class="col__hint" id="tr-flaws-hint"></span>
+                    </div>
+                    <div class="col__scroll" id="list-flaws"></div>
+                </div>
+                <button class="arrow arrow--r" id="rot-r" title="→">&#8250;</button>
+            </div>
+
+            <!-- Tab: skills -->
+            <div class="traits__body traits__body--skills hidden" id="pane-skills">
+                <div class="skills">
+                    <h2 class="col__title col__title--gold" id="sk-title"></h2>
+                    <p class="muted" id="sk-sub"></p>
+                    <p class="eyebrow" id="sk-limit"></p>
+                    <div class="skills__list" id="skills"></div>
+                    <p class="choice__status" id="sk-status"></p>
+                    <button class="btn btn--lock" id="btn-lock-skills" disabled></button>
+                    <p class="muted muted--sm" id="sk-note"></p>
+                </div>
+            </div>
+
+            <footer class="traits__foot">
+                <button class="btn btn--ghost btn--sm" id="btn-tr-back"></button>
+                <span class="muted muted--sm" id="tr-locked-note"></span>
+            </footer>
+        </div>
+    </section>
+
+    <!-- ═════════════════════════ INTRO MODAL ════════════════════════════ -->
+    <div class="modal hidden" id="intro">
+        <div class="lxr-hit modal__box">
+            <h2 class="modal__title" id="in-title"></h2>
+            <p id="in-p1"></p>
+            <p id="in-p2"></p>
+            <p id="in-p3"></p>
+            <p id="in-p4"></p>
+            <button class="btn btn--primary btn--wide" id="btn-intro"></button>
         </div>
     </div>
+
+    <div class="toast hidden" id="toast"></div>
 </div>
 <script src="app.js"></script>
 </body>

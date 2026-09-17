@@ -18,6 +18,10 @@ create a new one, delete, or leave. Version 2 is a rewrite on the LXRCore v3
 API — the previous NUI posted to a wrong resource name and loaded jQuery /
 Materialize from CDNs, so it could not work.
 
+## Character & life experience (traits)
+
+Creation is a three-step personal file: identity → **character & life experience** (advantages / disadvantages with a point balance, 2–4 advantages, ≤ 12 traits, conflicts, linked flaws, seven ready-made fates) → **skills & experience** (leftover balance becomes starting skill levels). Everything is validated on the server before `Player.Login`; the result lives in `players.metadata.traits` and is published as the `traits` state bag plus `GetTraits / HasTrait / GetModifier` exports. Definitions are data in `config_traits.lua`; see [docs/TRAITS.md](docs/TRAITS.md) and [docs/API.md](docs/API.md). `lua tests/run.lua` covers the engine, presets and locale coverage.
+
 ## What it does
 
 | | |
