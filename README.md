@@ -6,6 +6,12 @@
 
 <img src="https://raw.githubusercontent.com/LXRCore/.github/main/profile/lxrcore-logo.png" alt="LXRCore" width="72" align="left" style="margin-right:12px">
 
+# lxr-multicharacter — superseded by lxr-creator
+
+> **This resource is retired.** Character select, creation, the trait system and the new
+> appearance creator now live in [lxr-creator](https://github.com/LXRCore/lxr-creator)
+> (same server contract, same trait engine). Do not run both.
+
 # lxr-multicharacter — Character selection for LXRCore v3
 
 ![Version](https://img.shields.io/badge/version-2.0.0-c4a574)
