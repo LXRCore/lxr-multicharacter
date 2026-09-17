@@ -130,7 +130,8 @@ Config.Integrations = {
     -- Fired (client, on the loading player) after a character is loaded: (cData, isNew)
     afterSelect = 'lxr-spawn:client:setupSpawnUI',
     afterCreate = 'lxr-spawn:client:setupSpawnUI',
-    -- Client event that opens the appearance creator for brand-new characters (nil = skip)
+    -- Client event that opens the appearance creator for brand-new characters (nil = skip).
+    -- It receives (afterCreateEvent, cData) and fires afterCreate itself once the look is saved.
     newCharacterAppearance = 'lxr-clothing:client:newPlayer',
 }
 

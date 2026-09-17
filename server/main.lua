@@ -207,9 +207,11 @@ local function handOff(src, isNew)
     local cData = { citizenid = pd.citizenid, cid = pd.cid, charinfo = pd.charinfo, job = pd.job, money = pd.money, position = pd.position, traits = pd.metadata.traits }
     TriggerClientEvent('lxr-multicharacter:client:closeUI', src)
     local ev = isNew and Config.Integrations.afterCreate or Config.Integrations.afterSelect
-    if ev then TriggerClientEvent(ev, src, cData, isNew) end
     if isNew and Config.Integrations.newCharacterAppearance then
-        TriggerClientEvent(Config.Integrations.newCharacterAppearance, src)
+        -- the appearance creator runs first and continues with `ev` (spawn) when the player saves
+        TriggerClientEvent(Config.Integrations.newCharacterAppearance, src, ev, cData)
+    elseif ev then
+        TriggerClientEvent(ev, src, cData, isNew)
     end
     LXRCore.Log.info('multicharacter', isNew and 'character created' or 'character selected', { source = src, citizenid = pd.citizenid })
 end
